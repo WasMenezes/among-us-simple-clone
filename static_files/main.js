@@ -6,13 +6,18 @@ const upArrow = 38;
 const rightArrow = 39;
 const downArrow = 40;
 
-var x = canvas.width / 2;
-var y = canvas.height - 30;
-
 var upFlag = false;
 var downFlag = false;
 var leftFlag = false;
 var rightFlag = false;
+
+let socket = io();
+
+const players = {}
+
+socket.on('newPlayerConnect', param => {
+    players[param.id] = param;
+});
 
 document.querySelector('body').addEventListener('keydown', function (event) {
     var tecla = event.keyCode;
@@ -42,11 +47,21 @@ document.querySelector('body').addEventListener('keyup', function (event) {
     }
 });
 
+socket.on('position', param => {
+    players[param.id] = param;
+})
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
-    ctx.fillRect(x, y, 10, 10);
+
+    for (const id in players) {
+        if (players.hasOwnProperty(id)) {
+            const element = players[id];
+            ctx.fillRect(element.position.x, element.position.y, 10, 10);
+        }
+    }
+    
     ctx.fillStyle = "#0095DD";
     ctx.fill();
     ctx.closePath();
@@ -74,14 +89,6 @@ function draw() {
             socket.emit("move", 'down');
         }
     }
-
 }
 
 setInterval(draw, 1);
-
-let socket = io();
-
-socket.on('position', param => {
-    x = param.x;
-    y = param.y;
-})
