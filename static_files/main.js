@@ -11,44 +11,67 @@ var downFlag = false;
 var leftFlag = false;
 var rightFlag = false;
 
+var playerId;
+
 let socket = io();
 
-const players = {}
+let players = {}
 
 socket.on('newPlayerConnect', param => {
-    players[param.id] = param;
+    players[param.id] = param.newPlayer;
+    players = param.players;
 });
+
+socket.on('connected', param => {
+    playerId = param.newPlayer.id
+    players[param.newPlayer.id] = param.newPlayer;
+    players = param.players;
+})
 
 document.querySelector('body').addEventListener('keydown', function (event) {
     var tecla = event.keyCode;
 
-    if (tecla == leftArrow) {
-        leftFlag = true;
-    } else if (tecla == upArrow) {
-        upFlag = true;
-    } else if (tecla == rightArrow) {
-        rightFlag = true;
-    } else if (tecla == downArrow) {
-        downFlag = true;
+    switch (tecla) {
+        case leftArrow:
+            leftFlag = true;
+            break;
+        case upArrow:
+            upFlag = true;
+            break;
+        case rightArrow:
+            rightFlag = true;
+            break;
+        case downArrow:
+            downFlag = true;
+            break;
     }
 });
 
 document.querySelector('body').addEventListener('keyup', function (event) {
     var tecla = event.keyCode;
 
-    if (tecla == leftArrow) {
-        leftFlag = false;
-    } else if (tecla == upArrow) {
-        upFlag = false;
-    } else if (tecla == rightArrow) {
-        rightFlag = false;
-    } else if (tecla == downArrow) {
-        downFlag = false;
+    switch (tecla) {
+        case leftArrow:
+            leftFlag = false;
+            break;
+        case upArrow:
+            upFlag = false;
+            break;
+        case rightArrow:
+            rightFlag = false;
+            break;
+        case downArrow:
+            downFlag = false;
+            break;
     }
 });
 
 socket.on('position', param => {
-    players[param.id] = param;
+    players[param.id].position = param.position;
+})
+
+socket.on('update-player', param => {
+    players = param;
 })
 
 function draw() {
@@ -59,34 +82,33 @@ function draw() {
         if (players.hasOwnProperty(id)) {
             const element = players[id];
             ctx.fillRect(element.position.x, element.position.y, 10, 10);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
         }
     }
-    
-    ctx.fillStyle = "#0095DD";
-    ctx.fill();
     ctx.closePath();
 
     if (leftFlag) {
-        if (x > 0) {
-            socket.emit("move", 'left');
+        if (players[playerId].position.x > 0) {
+            socket.emit("move", { position: 'left', id: playerId });
         }
     }
 
     if (upFlag) {
-        if (y > 0) {
-            socket.emit("move", 'up');
+        if (players[playerId].position.y > 0) {
+            socket.emit("move", { position: 'up', id: playerId });
         }
     }
 
     if (rightFlag) {
-        if (x < 290) {
-            socket.emit("move", 'right');
+        if (players[playerId].position.x < 290) {
+            socket.emit("move", { position: 'right', id: playerId });
         }
     }
 
     if (downFlag) {
-        if (y < 140) {
-            socket.emit("move", 'down');
+        if (players[playerId].position.y < 140) {
+            socket.emit("move", { position: 'down', id: playerId });
         }
     }
 }

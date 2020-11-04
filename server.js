@@ -13,37 +13,39 @@ var position = {
 var dx = 1;
 var dy = -1;
 
-const players = {
-
-}
+const players = {}
 
 
 io.on('connection', (socket) => {
-    socket.emit("newPlayerConnect", { id: socket.id, position: {...position} });
+    let newPlayer = { id: socket.id, position: { ...position } };
+    players[newPlayer.id] = newPlayer;
+
+    socket.emit("connected", { newPlayer: { ...newPlayer }, players: { ...players } });
+    io.emit("newPlayerConnect", { newPlayer: { ...newPlayer }, players: { ...players } });
+
     console.log('New Player Connected ID: ' + socket.id);
 
     socket.on('move', move => {
-        switch (move) {
+        switch (move.position) {
             case 'up':
-                position.y += dy;
-                socket.emit("position", { id: socket.id, position: {...position} });
+                players[move.id].position.y += dy;
                 break;
             case 'left':
-                position.x -= dx;
-                socket.emit("position", { id: socket.id, position: {...position} });
+                players[move.id].position.x -= dx;
                 break;
             case 'down':
-                position.y -= dy;
-                socket.emit("position", { id: socket.id, position: {...position} });
+                players[move.id].position.y -= dy;
                 break;
             case 'right':
-                position.x += dx;
-                socket.emit("position", { id: socket.id, position: {...position} });
+                players[move.id].position.x += dx;
                 break;
         }
+        socket.emit("position", { id: move.id, position: { ...players[move.id].position } });
+        io.emit("update-player", players);
     })
     socket.on('disconnect', () => {
         console.log('user disconnected');
+        delete players[socket.id];
     });
 });
 
