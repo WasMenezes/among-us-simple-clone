@@ -10,14 +10,15 @@ var position = {
     y: 110
 }
 
-var dx = 1;
-var dy = -1;
+var dx = 0.25;
+var dy = -0.25;
 
-const players = {}
+let players = {}
 
+const cycleLoop = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
 io.on('connection', (socket) => {
-    let newPlayer = { id: socket.id, position: { ...position } };
+    let newPlayer = { id: socket.id, position: { ...position }, currentLoopIndex: 11};
     players[newPlayer.id] = newPlayer;
 
     socket.emit("connected", { newPlayer: { ...newPlayer }, players: { ...players } });
@@ -40,9 +41,20 @@ io.on('connection', (socket) => {
                 players[move.id].position.x += dx;
                 break;
         }
-        socket.emit("position", { id: move.id, position: { ...players[move.id].position } });
+        players[move.id].currentLoopIndex++;
+        if (players[move.id].currentLoopIndex >= cycleLoop.length) {
+            players[move.id].currentLoopIndex = 0;
+        }
+
+        socket.emit("position", { id: move.id, position: { ...players[move.id].position }, currentLoopIndex:  players[move.id].currentLoopIndex});
+        io.emit("update-player", players);
+    })   
+
+    socket.on('stop-player', playerId => {
+        players[playerId].currentLoopIndex = 11;
         io.emit("update-player", players);
     })
+
     socket.on('disconnect', () => {
         console.log('user disconnected');
         delete players[socket.id];
